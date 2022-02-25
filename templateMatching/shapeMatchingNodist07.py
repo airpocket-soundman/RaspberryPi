@@ -142,13 +142,55 @@ while True:
 
     #画像前処理
     gray,binary,edge = preprocess(frame)
+    gray2 = gray.copy()
 
     #エッジデータ抽出
     cnt,cimg = contours(edge)
-
+    defe = False
     #エッジデータの類似度判定
     if cnt is not False:    #画像データの輪郭データを取得できている場合
         match = cv2.matchShapes(tempCnt, cnt, cv2.CONTOURS_MATCH_I3, 0)
+        far = []
+
+        hull = cv2.convexHull(cnt,returnPoints = False)
+        try:
+            defects = cv2.convexityDefects(cnt,hull)
+#            print(defects)
+            defe = True
+
+        except:
+            defe = False
+#            print("miss")
+#        print("start")
+
+        if defects is not None:
+            depthList = []
+            print("shape = ", defects.shape[0])
+            for i in range(defects.shape[0]):
+
+                s,e,f,d = defects[i,0]
+                depthList.append(d)
+#                print(farList)
+#                print(i,s,e,f,d)
+                start = tuple(cnt[s][0])
+                end = tuple(cnt[e][0])
+                far = tuple(cnt[f][0])
+                cv2.line(gray2,start,end,[0,255,0],2)
+                cv2.circle(gray2,far,5,[0,0,255],-1)
+            
+#            print(sorted(depthList,reverse=True))
+
+            try:
+                if sorted(depthList,reverse=True)[4] > 500:
+                    print("NG")
+                else:
+                    print("OK")
+            except:
+                print("not exist")
+
+            print("finish-------------------------------")
+            cv2.imshow('gray2',gray2)
+
         if match < differTh:      #類似度がしきい値以下ならOK
             result = "OK"
             color = (255,0,0)
