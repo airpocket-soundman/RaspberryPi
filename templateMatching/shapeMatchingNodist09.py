@@ -15,10 +15,16 @@ import cv2
 import numpy as np
 from PIL import Image as im
 import time
+import os
+
+#カメラの露出、ホワイトバランスを固定
+os.system('v4l2-ctl -d /dev/video0 -c exposure_auto=1 -c exposure_absolute=300')
+os.system('v4l2-ctl -d /dev/video0 -c white_balance_temperature_auto=0')
+os.system('v4l2-ctl -d /dev/video0 -c white_balance_temperature=4600')
 
 #カメラ解像度指定。カメラによって使える解像度は異なる。
 WIDTH  = 1280  #320/640/800/1024/1280/1920
-HEIGHT = 720  #240/480/600/ 576/ 720/1080
+HEIGHT = 720   #240/480/600/ 576/ 720/1080
 
 #camera歪みキャリブレーション USBカメラ、1280×720サイズで調整
 #カメラ解像度、カメラ変更の場合はcameratestUndist01.pyで係数測定が必要
@@ -35,13 +41,13 @@ mapX, mapY = cv2.initUndistortRectifyMap(mtx, dist, None, newKK, (WIDTH,HEIGHT),
 th1 = 300               #cannyフィルタ用しきい値
 th2 = 1000              #cannyフィルタ用しきい値
 ksize = 1               #median blur用しきい値 -1でフィルタ不使用
-binTh = 240             #binary処理用しきい値
+binTh = 100             #binary処理用しきい値
 maxValue = 255          #binary処理用しきい値
 differTh = 0.10         #類似度判定のしきい値
 dentNum = 4             #OK品の凹形状数
 nomalDepthTh = 16000    #OK品の凹深さしきい値
 ngDepthTh = 500         #NG品の凹深さしきい値
-waitCycle = 5           #カメラ安定までの待ちサイクル数
+waitCycle = 3           #カメラ安定までの待ちサイクル数
 counter = waitCycle + 1 #待ちサイクル値の初期化
 
 #描画設定
@@ -167,9 +173,9 @@ def judgeDent(cnt,dentNum,nomalDepthTh,ngDepthTh):          #凹形状により�
                         cv2.line(frame,start,end,[0,255,0],2)           #外接多角形を描画
 
                         if d > nomalDepthTh:                            #正しい凹み点を描画
-                            cv2.circle(frame,far,5,[255,0,0],-1)
+                            cv2.circle(frame,far,10,[255,0,0],-1)
                         elif d <= nomalDepthTh and d> ngDepthTh:        #異常な凹み点を描画
-                            cv2.circle(frame,far,5,[0,0,255],-1)    
+                            cv2.circle(frame,far,10,[0,0,255],-1)    
 
                 depthList = sorted(depthList, reverse = True)           #凹み深さを降順にソート
 
@@ -269,7 +275,7 @@ while True:
     #画像前処理
     frame,gray,binary,edge = preprocess(frame)
 
-    #エッジデータ抽出
+    #輪郭データ作成
     cnt,frame,cimg = contours(frame,edge)
 
     #エッジデータの類似度判定
